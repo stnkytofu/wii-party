@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tournament Tracker - Add Match</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "error": "#ff7351",
+            "primary-container": "#52b555",
+            "surface-dim": "#0e0e0e",
+            "on-tertiary": "#4a0001",
+            "surface-container-lowest": "#000000",
+            "secondary-dim": "#efc900",
+            "secondary-container": "#705d00",
+            "surface": "#0e0e0e",
+            "primary-fixed-dim": "#83e881",
+            "on-tertiary-fixed": "#3a0001",
+            "on-background": "#ffffff",
+            "surface-variant": "#262626",
+            "error-container": "#b92902",
+            "surface-tint": "#91f78e",
+            "surface-container-high": "#20201f",
+            "primary-dim": "#83e881",
+            "secondary-fixed-dim": "#efc900",
+            "background": "#0e0e0e",
+            "on-secondary-fixed": "#453900",
+            "on-primary-container": "#002a06",
+            "tertiary-fixed": "#ff9385",
+            "on-tertiary-container": "#110000",
+            "tertiary-fixed-dim": "#ff7c6c",
+            "outline-variant": "#484847",
+            "tertiary-container": "#fd493b",
+            "surface-container": "#1a1a1a",
+            "error-dim": "#d53d18",
+            "tertiary": "#ff7161",
+            "inverse-on-surface": "#565555",
+            "on-error-container": "#ffd2c8",
+            "on-surface": "#ffffff",
+            "on-secondary-fixed-variant": "#665500",
+            "surface-bright": "#2c2c2c",
+            "on-tertiary-fixed-variant": "#7a0003",
+            "tertiary-dim": "#ff7161",
+            "primary": "#91f78e",
+            "surface-container-low": "#131313",
+            "on-surface-variant": "#adaaaa",
+            "on-error": "#450900",
+            "secondary-fixed": "#ffd709",
+            "on-primary-fixed-variant": "#00691a",
+            "inverse-primary": "#006f1d",
+            "inverse-surface": "#fcf9f8",
+            "primary-fixed": "#91f78e",
+            "outline": "#767575",
+            "surface-container-highest": "#262626",
+            "on-primary": "#005e17",
+            "on-secondary": "#5b4b00",
+            "secondary": "#ffd709",
+            "on-primary-fixed": "#00480f",
+            "on-secondary-container": "#fff7e6"
+          },
+          fontFamily: {
+            "headline": ["Plus Jakarta Sans"],
+            "body": ["Plus Jakarta Sans"],
+            "label": ["Plus Jakarta Sans"]
+          },
+          borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 0px;
+      height: 0px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e]/60 backdrop-blur-xl h-20 flex items-center justify-between px-6 shadow-[0_24px_24px_rgba(0,0,0,0.12)]">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#91f78e] text-3xl" data-icon="sports_esports">sports_esports</span>
+<h1 class="font-['Plus_Jakarta_Sans'] text-[1.75rem] font-bold tracking-tight text-[#91f78e]">Tournament Tracker</h1>
+</div>
+<button class="text-white/70 font-bold uppercase tracking-widest text-[0.75rem] hover:scale-95 transition-transform duration-500 active:scale-90">Reset</button>
+</header>
+<main class="pt-28 pb-32 px-6 max-w-2xl mx-auto space-y-10">
+<!-- Section: Select Game -->
+<section>
+<div class="flex items-baseline justify-between mb-6">
+<h2 class="text-[1.75rem] font-bold font-headline tracking-tight">Select Game</h2>
+<span class="text-primary text-xs font-bold uppercase tracking-widest">Step 1/3</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Mario Kart Card -->
+<button class="relative aspect-square overflow-hidden rounded-xl bg-surface-container-high group transition-all duration-500 hover:scale-[1.02] ring-4 ring-primary">
+<img alt="Mario Kart 8 Deluxe Gameplay" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" data-alt="Colorful kart racing action shot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAB35CeatxPgib89shqRh97TNmGWT-bF5zkjU8yOVq11LEsnv4gSlGjmrnmnnba0xOPDkoB4Vf37_rwXZESz_Q0sRZlFzj1yy2ndhqsw1ZVnbFfwXxsqHWj4GnSJbZuxcwjDkU-brUe_RIcRILNBFD_z2EidIIHNepfx_bL_1IXWlQk_EM8rMM0MfcccTcM4njfMrCvWlFCnTtNv6OGxM0bfdJY8fLXNmrt9qneaID2xpgSPRRpWtJza4hpBQAKWFcS6uWzZ-rSSe0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-left">
+<span class="text-primary block mb-1"><span class="material-symbols-outlined" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span></span>
+<p class="font-bold text-lg leading-tight">Mario Kart</p>
+</div>
+</button>
+<!-- Smash Bros Card -->
+<button class="relative aspect-square overflow-hidden rounded-xl bg-surface-container-high group transition-all duration-500 hover:scale-[1.02] ring-0 ring-primary">
+<img alt="Retro fighting game controller" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" data-alt="Retro gaming controllers on dark surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtYsONyz0XI0V5mxgm5OKbnPJNtn81KFNRruMUDoxu4jE0Xke6vs9zz5IkEkE5r3c1a2eQfyw1wVGMfhlBnmm7oe7mauSSl-1_Pt7bWD2LQD_-1mgdforUl9EC29aRpixS4jQvZuzrvnOXEvUBjvNTRKTvXSvt9pqVt4fKZllbaEQkZVToGFuS3LIRfZZ4ev9amfdI4STASUGOvfOGiX6qpKIaYOhKBvefjas_XPqtJ-_7azhmXElZXcSD6UguK7h9bziwzX7ztjE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-left">
+<p class="font-bold text-lg leading-tight text-white/70 group-hover:text-white">Smash Bros</p>
+</div>
+</button>
+<!-- Wii Sports Card -->
+<button class="relative aspect-square overflow-hidden rounded-xl bg-surface-container-high group transition-all duration-500 hover:scale-[1.02]">
+<img alt="Tennis racket on court" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" data-alt="Minimalist blue and green tennis racket" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1grZSCvHbyEPQr9jB2yLKPHUZ1En0zwT7_Ksd5Vtcs_JHxFoRE-q66_dE_gz0kdAOefWJD2dGeGitTLAA0cWDL_Pve6N253daFdOH6D3IBUouK7RArwEsZx9kEp2vJwuIRqpx1LDNKQJFtX4BO1NWRLpXzxtrRFINVYHYRMaonXI71VB0NTyA4h26xu96hbhkQVkFMH46pWqybnkUWbatNwqoNxHX_S7tnAltV3UWrf3iIhI6Q5W2Y2T3XKqTDYe_dBDhtr-egGE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-left">
+<p class="font-bold text-lg leading-tight text-white/70 group-hover:text-white">Wii Sports</p>
+</div>
+</button>
+<!-- More Games -->
+<button class="aspect-square rounded-xl bg-surface-container flex flex-col items-center justify-center gap-2 border-2 border-dashed border-outline-variant hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-outline" data-icon="add">add</span>
+<p class="text-xs font-bold uppercase tracking-widest text-outline">Other Game</p>
+</button>
+</div>
+</section>
+<!-- Section: Select Players & Rank -->
+<section>
+<div class="flex items-baseline justify-between mb-6">
+<h2 class="text-[1.75rem] font-bold font-headline tracking-tight">Players &amp; Placements</h2>
+<span class="text-primary text-xs font-bold uppercase tracking-widest">Step 2/3</span>
+</div>
+<div class="space-y-3">
+<!-- Player 1: Selected & Ranked -->
+<div class="bg-surface-container-high p-4 rounded-xl flex items-center justify-between transition-all duration-500">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center ring-2 ring-primary">
+<span class="material-symbols-outlined text-primary" data-icon="face" style="font-variation-settings: 'FILL' 1;">face</span>
+</div>
+<div>
+<p class="font-bold text-lg">Alex V.</p>
+<p class="text-xs text-primary font-bold uppercase tracking-widest">Active Racer</p>
+</div>
+</div>
+<div class="flex bg-surface-container p-1 rounded-full gap-1">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black bg-secondary text-on-secondary shadow-lg">1</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white/40 hover:text-white transition-colors">2</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white/40 hover:text-white transition-colors">3</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white/40 hover:text-white transition-colors">4</button>
+</div>
+</div>
+<!-- Player 2: Selected & Ranked -->
+<div class="bg-surface-container-high p-4 rounded-xl flex items-center justify-between transition-all duration-500">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center ring-2 ring-primary">
+<span class="material-symbols-outlined text-primary" data-icon="face_3" style="font-variation-settings: 'FILL' 1;">face_3</span>
+</div>
+<div>
+<p class="font-bold text-lg">Jordan K.</p>
+<p class="text-xs text-primary font-bold uppercase tracking-widest">Active Racer</p>
+</div>
+</div>
+<div class="flex bg-surface-container p-1 rounded-full gap-1">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white/40 hover:text-white transition-colors">1</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black bg-primary text-on-primary shadow-lg">2</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white/40 hover:text-white transition-colors">3</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white/40 hover:text-white transition-colors">4</button>
+</div>
+</div>
+<!-- Player 3: Not Selected -->
+<div class="bg-surface-container-low p-4 rounded-xl flex items-center justify-between transition-all duration-500 group cursor-pointer hover:bg-surface-container-high">
+<div class="flex items-center gap-4 opacity-40 group-hover:opacity-100 transition-opacity">
+<div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="face_2">face_2</span>
+</div>
+<div>
+<p class="font-bold text-lg">Sam R.</p>
+<p class="text-xs text-white/50 font-bold uppercase tracking-widest">Inactive</p>
+</div>
+</div>
+<button class="px-6 py-2 rounded-full bg-surface-variant text-xs font-bold uppercase tracking-widest group-hover:bg-primary group-hover:text-on-primary transition-all">Add</button>
+</div>
+<!-- Player 4: Not Selected -->
+<div class="bg-surface-container-low p-4 rounded-xl flex items-center justify-between transition-all duration-500 group cursor-pointer hover:bg-surface-container-high">
+<div class="flex items-center gap-4 opacity-40 group-hover:opacity-100 transition-opacity">
+<div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="face_6">face_6</span>
+</div>
+<div>
+<p class="font-bold text-lg">Casey M.</p>
+<p class="text-xs text-white/50 font-bold uppercase tracking-widest">Inactive</p>
+</div>
+</div>
+<button class="px-6 py-2 rounded-full bg-surface-variant text-xs font-bold uppercase tracking-widest group-hover:bg-primary group-hover:text-on-primary transition-all">Add</button>
+</div>
+</div>
+</section>
+<!-- Section: Finalize -->
+<section class="pb-8">
+<div class="flex items-baseline justify-between mb-6">
+<h2 class="text-[1.75rem] font-bold font-headline tracking-tight">Finalize</h2>
+<span class="text-primary text-xs font-bold uppercase tracking-widest">Step 3/3</span>
+</div>
+<button class="w-full py-8 bg-gradient-to-br from-[#91f78e] to-[#52b555] rounded-xl flex flex-col items-center justify-center gap-2 shadow-[0_20px_40px_rgba(145,247,142,0.15)] group transition-all duration-500 hover:scale-[0.98] active:scale-95">
+<span class="material-symbols-outlined text-[#002a06] text-4xl" data-icon="send">send</span>
+<span class="text-[#002a06] font-black text-xl tracking-tighter uppercase italic">SUBMIT RESULTS</span>
+</button>
+<p class="text-center mt-4 text-white/40 text-[0.7rem] uppercase tracking-widest font-bold">Points will be applied to the seasonal leaderboard immediately</p>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full rounded-t-[3rem] z-50 pb-safe bg-[#0e0e0e]/60 backdrop-blur-xl shadow-[0_-8px_32px_rgba(0,0,0,0.5)]">
+<div class="flex justify-around items-center w-full px-4 h-24">
+<!-- Leaderboard -->
+<a class="flex flex-col items-center justify-center text-white/50 hover:text-[#91f78e] transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="leaderboard">leaderboard</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[0.75rem] font-bold uppercase tracking-wider mt-1">Leaderboard</span>
+</a>
+<!-- Add Match (Active) -->
+<a class="flex flex-col items-center justify-center bg-gradient-to-br from-[#91f78e] to-[#52b555] text-[#0e0e0e] rounded-full px-6 py-2 scale-110 active:scale-95 duration-500 transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="add_circle" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[0.75rem] font-bold uppercase tracking-wider mt-1">Add Match</span>
+</a>
+<!-- Finals Mode -->
+<a class="flex flex-col items-center justify-center text-white/50 hover:text-[#91f78e] transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="emoji_events">emoji_events</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[0.75rem] font-bold uppercase tracking-wider mt-1">Finals Mode</span>
+</a>
+</div>
+</nav>
+</body></html>

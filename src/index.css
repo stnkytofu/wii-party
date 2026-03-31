@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #0e0e0e;
+  --color-surface-dim: #0e0e0e;
+  --color-surface-bright: #2c2c2c;
+  --color-surface-container-lowest: #000000;
+  --color-surface-container-low: #131313;
+  --color-surface-container: #1a1a1a;
+  --color-surface-container-high: #20201f;
+  --color-surface-container-highest: #262626;
+  --color-surface-variant: #262626;
+
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #adaaaa;
+  --color-on-background: #ffffff;
+  --color-background: #0e0e0e;
+
+  --color-primary: #91f78e;
+  --color-primary-dim: #83e881;
+  --color-primary-container: #52b555;
+  --color-on-primary: #005e17;
+  --color-on-primary-container: #002a06;
+
+  --color-secondary: #ffd709;
+  --color-secondary-dim: #efc900;
+  --color-secondary-container: #705d00;
+  --color-on-secondary: #5b4b00;
+  --color-on-secondary-container: #fff7e6;
+
+  --color-tertiary: #ff7161;
+  --color-tertiary-dim: #ff7161;
+  --color-tertiary-container: #fd493b;
+  --color-on-tertiary: #4a0001;
+  --color-on-tertiary-container: #110000;
+
+  --color-error: #ff7351;
+  --color-error-dim: #d53d18;
+  --color-error-container: #b92902;
+  --color-on-error: #450900;
+  --color-on-error-container: #ffd2c8;
+
+  --color-outline: #767575;
+  --color-outline-variant: #484847;
+
+  --color-inverse-surface: #fcf9f8;
+  --color-inverse-on-surface: #565555;
+  --color-inverse-primary: #006f1d;
+
+  --font-family-headline: 'Plus Jakarta Sans', sans-serif;
+  --font-family-body: 'Plus Jakarta Sans', sans-serif;
+  --font-family-label: 'Plus Jakarta Sans', sans-serif;
+
+  --radius-DEFAULT: 1rem;
+  --radius-lg: 2rem;
+  --radius-xl: 3rem;
+}
+
+/* ============================================
+   Tournament Tracker — Tailwind Dark Theme
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #0e0e0e;
+  color: #ffffff;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.25s ease-out;
+}
+
+
