@@ -9,6 +9,7 @@ type Props = {
   stationConfig: StationConfig
   onSubmit: (result: MatchResult, deltas: Map<string, number>) => void
   onStartGame: (stationId: StationId, gameId: string, variantId: string | null, playerIds: string[]) => void
+  onGameStarted: () => void
   onClose: () => void
   initialStationId?: StationId | null
   initialGameId?: string | null
@@ -24,7 +25,7 @@ type ResultEntry = {
   delta: number
 }
 
-export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, onStartGame, onClose, initialStationId, initialGameId, initialVariantId, initialPlayerIds }: Props) {
+export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, onStartGame, onGameStarted, onClose, initialStationId, initialGameId, initialVariantId, initialPlayerIds }: Props) {
   const [step, setStep] = useState<Step>(() => {
     if (initialGameId && initialPlayerIds) return 'place'
     if (initialStationId) return 'game'
@@ -75,14 +76,22 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
     assignPosition(playerId, team)
   }
 
+  // Whether we're submitting results for an already-running game (vs creating a new one)
+  const isSubmittingForActiveGame = !!(initialGameId && initialPlayerIds)
+
   const goToPlace = () => {
     if (selectedIds.length < config.minPlayers) return
-    // Mark station as live
-    if (selectedStationId && selectedGameId) {
-      onStartGame(selectedStationId, selectedGameId, selectedVariantId, selectedIds)
+    if (isSubmittingForActiveGame) {
+      // Already in submit-results mode — just move to placement step
+      setPlacements([])
+      setStep('place')
+    } else {
+      // Creating a new game — start it and navigate to lock screen
+      if (selectedStationId && selectedGameId) {
+        onStartGame(selectedStationId, selectedGameId, selectedVariantId, selectedIds)
+      }
+      onGameStarted()
     }
-    setPlacements([])
-    setStep('place')
   }
 
   const assignPosition = (playerId: string, position: number) => {
@@ -447,7 +456,10 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
             {/* Action Buttons */}
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => { setStep('game'); setSelectedIds([]); setPlacements([]); setSelectedVariantId(null) }}
+                onClick={() => {
+                  if (initialPlayerIds) { onClose(); return }
+                  setStep('game'); setSelectedIds([]); setPlacements([]); setSelectedVariantId(null)
+                }}
                 className="flex-1 py-4 bg-surface-container-high rounded-xl text-on-surface-variant font-bold text-sm uppercase tracking-widest hover:bg-surface-container-highest transition-colors cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm align-middle mr-1">arrow_back</span>
@@ -520,7 +532,10 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
             {/* Action Buttons */}
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => { setStep('game'); setSelectedIds([]); setSelectedVariantId(null) }}
+                onClick={() => {
+                  if (initialPlayerIds) { onClose(); return }
+                  setStep('game'); setSelectedIds([]); setSelectedVariantId(null)
+                }}
                 className="flex-1 py-4 bg-surface-container-high rounded-xl text-on-surface-variant font-bold text-sm uppercase tracking-widest hover:bg-surface-container-highest transition-colors cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm align-middle mr-1">arrow_back</span>

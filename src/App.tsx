@@ -431,6 +431,12 @@ export default function App() {
             stationConfig={stationConfig}
             onSubmit={handleMatchSubmit}
             onStartGame={handleStartGame}
+            onGameStarted={() => {
+              // Game was just created — go to leaderboard so lock screen takes over
+              setManagingStationId(null)
+              setPrefillActiveGame(null)
+              setScreen('leaderboard')
+            }}
             onClose={() => {
               if (managingStationId && !prefillActiveGame) {
                 handleClearGame(managingStationId)
@@ -453,6 +459,7 @@ export default function App() {
           activeGame={myActiveGame}
           players={players}
           onCancel={() => handleClearGame(myActiveGame.stationId)}
+          onSubmitResult={() => handleSubmitResult(myActiveGame)}
         />
       )}
 

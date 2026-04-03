@@ -6,6 +6,7 @@ type Props = {
   activeGame: ActiveGame
   players: Player[]
   onCancel: () => void
+  onSubmitResult: () => void
 }
 
 function useElapsed(startedAt: number): string {
@@ -29,7 +30,7 @@ function useElapsed(startedAt: number): string {
   return elapsed
 }
 
-export function MatchLockScreen({ activeGame, players, onCancel }: Props) {
+export function MatchLockScreen({ activeGame, players, onCancel, onSubmitResult }: Props) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const elapsed = useElapsed(activeGame.startedAt)
   const station = STATIONS.find((s) => s.id === activeGame.stationId)!
@@ -74,10 +75,14 @@ export function MatchLockScreen({ activeGame, players, onCancel }: Props) {
         })}
       </div>
 
-      {/* Waiting message */}
-      <p className="text-on-surface-variant text-xs uppercase tracking-widest font-bold mb-8">
-        Waiting for results to be submitted…
-      </p>
+      {/* Submit Results */}
+      <button
+        onClick={onSubmitResult}
+        className="px-8 py-4 rounded-2xl bg-gradient-to-br from-primary to-primary-container text-on-primary-container font-black uppercase tracking-widest text-sm flex items-center gap-2 hover:scale-[0.98] active:scale-95 transition-all cursor-pointer mb-8 shadow-lg shadow-primary/20"
+      >
+        <span className="material-symbols-outlined text-lg">send</span>
+        Submit Results
+      </button>
 
       {/* Cancel section */}
       {!showCancelConfirm ? (
