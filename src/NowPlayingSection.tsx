@@ -6,10 +6,9 @@ type Props = {
   activeGames: ActiveGame[]
   stationConfig: StationConfig
   players: Player[]
-  isAdmin: boolean
-  onClearGame: (stationId: StationId) => void
-  onSubmitResult: (activeGame: ActiveGame) => void
-  onToggleRapidZone: () => void
+  isAdmin?: boolean
+  onClearGame?: (stationId: StationId) => void
+  onSubmitResult?: (activeGame: ActiveGame) => void
 }
 
 function useElapsed(startedAt: number): string {
@@ -43,9 +42,9 @@ function ActiveStationCard({
 }: {
   activeGame: ActiveGame
   players: Player[]
-  isAdmin: boolean
-  onClear: () => void
-  onSubmit: () => void
+  isAdmin?: boolean
+  onClear?: () => void
+  onSubmit?: () => void
 }) {
   const elapsed = useElapsed(activeGame.startedAt)
   const station = STATIONS.find((s) => s.id === activeGame.stationId)!
@@ -139,7 +138,6 @@ export function NowPlayingSection({
   isAdmin,
   onClearGame,
   onSubmitResult,
-  onToggleRapidZone,
 }: Props) {
   const visibleStations = STATIONS.filter(
     (s) => s.id !== 'rapid-zone' || stationConfig.rapidZoneActive
@@ -151,19 +149,6 @@ export function NowPlayingSection({
         <h3 className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
           Now Playing
         </h3>
-        {isAdmin && (
-          <button
-            onClick={onToggleRapidZone}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.65rem] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-              stationConfig.rapidZoneActive
-                ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
-                : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-            }`}
-          >
-            <span className="text-base">⚡</span>
-            Rapid Zone {stationConfig.rapidZoneActive ? 'On' : 'Off'}
-          </button>
-        )}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -176,8 +161,8 @@ export function NowPlayingSection({
                 activeGame={active}
                 players={players}
                 isAdmin={isAdmin}
-                onClear={() => onClearGame(station.id)}
-                onSubmit={() => onSubmitResult(active)}
+                onClear={() => onClearGame?.(station.id)}
+                onSubmit={() => onSubmitResult?.(active)}
               />
             )
           }

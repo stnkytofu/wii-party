@@ -69,9 +69,10 @@ export type MatchResult = {
   playerIds: string[]
   placements: Placement[]
   timestamp: number
+  deltas?: Record<string, number> // playerId → ELO change applied
 }
 
-export type Screen = 'leaderboard' | 'addMatch'
+export type Screen = 'leaderboard' | 'addMatch' | 'admin'
 
 export type StationId = 'dungeon' | 'the-loft' | 'rapid-zone'
 
@@ -82,8 +83,8 @@ export type Station = {
 }
 
 export const STATIONS: Station[] = [
-  { id: 'dungeon', name: 'Dungeon', emoji: '🏚️' },
   { id: 'the-loft', name: 'The Loft', emoji: '🌙' },
+  { id: 'dungeon', name: 'Dungeon', emoji: '🏚️' },
   { id: 'rapid-zone', name: 'Rapid Zone', emoji: '⚡' },
 ]
 
@@ -92,9 +93,11 @@ export type ActiveGame = {
   gameId: string
   variantId?: string | null
   playerIds: string[]
+  placements?: Placement[]
   startedAt: number
 }
 
 export type StationConfig = {
   rapidZoneActive: boolean
+  gameVisibility?: Record<string, string[]> // stationId → enabled gameIds (empty/missing = all visible)
 }

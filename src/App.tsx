@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { Player, MatchResult, Screen, ActiveGame, StationId, StationConfig } from './types'
+import type { Player, MatchResult, Placement, Screen, ActiveGame, StationId, StationConfig } from './types'
+import { GAMES } from './types'
 import { createPlayer, applyMatchResults } from './utils'
 import { Leaderboard } from './Leaderboard'
 import { AddMatchModal } from './AddMatchModal'
 import { MatchLockScreen } from './MatchLockScreen'
 import { PlayerSelect } from './PlayerSelect'
+import { AdminSettings } from './AdminSettings'
 import {
   writePlayers, writeMatches, onPlayersChange, onMatchesChange,
   writeActiveGames, onActiveGamesChange,
@@ -15,11 +17,11 @@ const ADMIN_PIN = '0000'
 
 export default function App() {
   const [players, setPlayers] = useState<Player[]>([])
-  const [_matches, setMatches] = useState<MatchResult[]>([])
+  const [matches, setMatches] = useState<MatchResult[]>([])
   const [activeGames, setActiveGames] = useState<ActiveGame[]>([])
   const [stationConfig, setStationConfig] = useState<StationConfig>({ rapidZoneActive: false })
   const [screen, setScreen] = useState<Screen>('leaderboard')
-  const [prefillActiveGame, setPrefillActiveGame] = useState<ActiveGame | null>(null)
+  const [adminSubmitGame, setAdminSubmitGame] = useState<ActiveGame | null>(null)
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('wii-party-admin') === 'true'
   })
@@ -83,28 +85,52 @@ export default function App() {
     updatePlayers((prev) => prev.filter((p) => p.id !== id))
   }, [updatePlayers])
 
+  const handleUndoMatch = useCallback((matchId: string) => {
+    setMatches((prevMatches) => {
+      const match = prevMatches.find((m) => m.id === matchId)
+      if (!match?.deltas) return prevMatches
+      // Reverse the ELO deltas
+      updatePlayers((prev) =>
+        prev.map((player) => {
+          const delta = match.deltas![player.id]
+          if (delta === undefined) return player
+          // Reverse streak: if they won (pos 1), decrement; otherwise we can't perfectly restore
+          const pos = match.placements.find((p) => p.playerId === player.id)?.position
+          const newStreak = pos === 1 ? Math.max(0, player.streak - 1) : player.streak
+          return { ...player, elo: Math.max(0, player.elo - delta), streak: newStreak }
+        })
+      )
+      const next = prevMatches.filter((m) => m.id !== matchId)
+      isLocalUpdate.current = true
+      writeMatches(next)
+      return next
+    })
+  }, [updatePlayers])
+
   const handleMatchSubmit = useCallback(
     (result: MatchResult, deltas: Map<string, number>) => {
       updatePlayers((prev) => applyMatchResults(prev, result, deltas))
       updateMatches((prev) => [...prev, result])
-      // Clear the active game for the station we're managing
-      const stationToClear = prefillActiveGame?.stationId ?? managingStationId
-      if (stationToClear) {
-        setActiveGames((cur) => {
+      // Clear the active game that matches the submitted players
+      setActiveGames((cur) => {
+        const stationToClear = managingStationId
+          ?? cur.find((g) => result.playerIds.every((id) => g.playerIds.includes(id)))?.stationId
+        if (stationToClear) {
           const next = cur.filter((g) => g.stationId !== stationToClear)
           writeActiveGames(next)
           return next
-        })
-      }
-      setPrefillActiveGame(null)
+        }
+        return cur
+      })
+      setAdminSubmitGame(null)
       setManagingStationId(null)
       setScreen('leaderboard')
     },
-    [updatePlayers, updateMatches, prefillActiveGame, managingStationId]
+    [updatePlayers, updateMatches, managingStationId]
   )
 
-  const handleStartGame = useCallback((stationId: StationId, gameId: string, variantId: string | null, playerIds: string[]) => {
-    const newGame: ActiveGame = { stationId, gameId, variantId, playerIds, startedAt: Date.now() }
+  const handleStartGame = useCallback((stationId: StationId, gameId: string, variantId: string | null, playerIds: string[], placements?: Placement[]) => {
+    const newGame: ActiveGame = { stationId, gameId, variantId, playerIds, ...(placements ? { placements } : {}), startedAt: Date.now() }
     setActiveGames((prev) => {
       const next = [...prev.filter((g) => g.stationId !== stationId), newGame]
       writeActiveGames(next)
@@ -122,14 +148,26 @@ export default function App() {
   }, [])
 
   const handleSubmitResult = useCallback((activeGame: ActiveGame) => {
-    setPrefillActiveGame(activeGame)
-    setManagingStationId(activeGame.stationId)
-    setScreen('addMatch')
+    setAdminSubmitGame(activeGame)
   }, [])
 
   const handleToggleRapidZone = useCallback(() => {
     setStationConfig((prev) => {
       const next = { ...prev, rapidZoneActive: !prev.rapidZoneActive }
+      writeStationConfig(next)
+      return next
+    })
+  }, [])
+
+  const handleToggleGameVisibility = useCallback((stationId: string, gameId: string) => {
+    setStationConfig((prev) => {
+      const vis = { ...(prev.gameVisibility ?? {}) }
+      const allIds = GAMES.map((g) => g.id)
+      const current = vis[stationId] ?? [...allIds] // default = all enabled
+      vis[stationId] = current.includes(gameId)
+        ? current.filter((id) => id !== gameId)
+        : [...current, gameId]
+      const next = { ...prev, gameVisibility: vis }
       writeStationConfig(next)
       return next
     })
@@ -141,11 +179,11 @@ export default function App() {
     isLocalUpdate.current = true
     writeMatches([])
     writeActiveGames([])
-    writeStationConfig({ rapidZoneActive: false })
+    writeStationConfig({ rapidZoneActive: false, gameVisibility: {} })
     setPlayers([])
     setMatches([])
     setActiveGames([])
-    setStationConfig({ rapidZoneActive: false })
+    setStationConfig({ rapidZoneActive: false, gameVisibility: {} })
   }, [])
 
   const handlePinSubmit = () => {
@@ -154,6 +192,7 @@ export default function App() {
       localStorage.setItem('wii-party-admin', 'true')
       setShowPinInput(false)
       setPinValue('')
+      setScreen('admin')
     } else {
       setPinValue('')
     }
@@ -195,16 +234,19 @@ export default function App() {
       if (!gameStillExists) {
         setManagingStationId(null)
         setScreen('leaderboard')
-        setPrefillActiveGame(null)
       }
     }
-  }, [activeGames, managingStationId, screen])
+    // Also clear admin submit overlay if that game was cancelled
+    if (adminSubmitGame && !activeGames.some((g) => g.stationId === adminSubmitGame.stationId)) {
+      setAdminSubmitGame(null)
+    }
+  }, [activeGames, managingStationId, screen, adminSubmitGame])
 
   // Check if current player is locked in an active match
   const myActiveGame = !isAdmin && currentPlayerId
     ? activeGames.find((g) => g.playerIds.includes(currentPlayerId))
     : null
-  const showLockScreen = myActiveGame && !(screen === 'addMatch' && managingStationId === myActiveGame.stationId)
+  const showLockScreen = myActiveGame && screen !== 'addMatch'
 
   // If not logged in as a player (and not admin), show player select
   if (!isAdmin && !currentPlayerId) {
@@ -258,30 +300,11 @@ export default function App() {
       {/* Top App Bar */}
       <header className="sticky top-0 w-full z-50 bg-[#0e0e0e] shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
         <div className="flex items-center justify-between px-5 h-14">
-          <button
-            onClick={() => setShowPinInput(true)}
-            className="flex items-center gap-2"
-          >
+          <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-2xl">sports_esports</span>
             <h1 className="font-headline text-lg font-bold tracking-tight text-primary">Wii Party</h1>
-          </button>
+          </div>
           <div className="flex items-center gap-3">
-            {isAdmin && (
-              <>
-                <button
-                  onClick={handleAdminLogout}
-                  className="text-primary/60 font-bold uppercase tracking-widest text-[0.6rem]"
-                >
-                  Admin ✓
-                </button>
-                <button
-                  onClick={() => { setShowResetConfirm(true); setResetInput('') }}
-                  className="text-white/70 font-bold uppercase tracking-widest text-[0.65rem] hover:scale-95 transition-transform duration-500 active:scale-90"
-                >
-                  Reset
-                </button>
-              </>
-            )}
             {!isAdmin && (
               <button
                 onClick={handlePlayerLogout}
@@ -415,12 +438,6 @@ export default function App() {
             players={players}
             activeGames={activeGames}
             stationConfig={stationConfig}
-            onAddPlayer={handleAddPlayer}
-            onRemovePlayer={handleRemovePlayer}
-            isAdmin={isAdmin}
-            onClearGame={handleClearGame}
-            onSubmitResult={handleSubmitResult}
-            onToggleRapidZone={handleToggleRapidZone}
           />
         )}
 
@@ -429,37 +446,65 @@ export default function App() {
             players={players}
             activeGames={activeGames}
             stationConfig={stationConfig}
+            currentPlayerId={currentPlayerId}
             onSubmit={handleMatchSubmit}
             onStartGame={handleStartGame}
             onGameStarted={() => {
               // Game was just created — go to leaderboard so lock screen takes over
               setManagingStationId(null)
-              setPrefillActiveGame(null)
               setScreen('leaderboard')
             }}
             onClose={() => {
-              if (managingStationId && !prefillActiveGame) {
+              if (managingStationId) {
                 handleClearGame(managingStationId)
               }
               setManagingStationId(null)
               setScreen('leaderboard')
-              setPrefillActiveGame(null)
             }}
-            initialStationId={prefillActiveGame?.stationId ?? null}
-            initialGameId={prefillActiveGame?.gameId ?? null}
-            initialVariantId={prefillActiveGame?.variantId ?? null}
-            initialPlayerIds={prefillActiveGame?.playerIds ?? null}
+          />
+        )}
+
+        {screen === 'admin' && isAdmin && (
+          <AdminSettings
+            players={players}
+            matches={matches}
+            activeGames={activeGames}
+            stationConfig={stationConfig}
+            onAddPlayer={handleAddPlayer}
+            onRemovePlayer={handleRemovePlayer}
+            onClearGame={handleClearGame}
+            onSubmitResult={handleSubmitResult}
+            onToggleRapidZone={handleToggleRapidZone}
+            onToggleGameVisibility={handleToggleGameVisibility}
+            onUndoMatch={handleUndoMatch}
+            onReset={() => { setShowResetConfirm(true); setResetInput('') }}
+            onLogout={() => { handleAdminLogout(); setScreen('leaderboard') }}
           />
         )}
       </main>
 
-      {/* Match Lock Screen */}
+      {/* Match Lock Screen (player view) */}
       {showLockScreen && myActiveGame && (
         <MatchLockScreen
           activeGame={myActiveGame}
           players={players}
           onCancel={() => handleClearGame(myActiveGame.stationId)}
-          onSubmitResult={() => handleSubmitResult(myActiveGame)}
+          onSubmit={handleMatchSubmit}
+        />
+      )}
+
+      {/* Admin Submit Result overlay */}
+      {adminSubmitGame && (
+        <MatchLockScreen
+          activeGame={adminSubmitGame}
+          players={players}
+          onCancel={() => {
+            handleClearGame(adminSubmitGame.stationId)
+            setAdminSubmitGame(null)
+          }}
+          onSubmit={handleMatchSubmit}
+          onClose={() => setAdminSubmitGame(null)}
+          startAtSubmit
         />
       )}
 
@@ -491,6 +536,24 @@ export default function App() {
             <span className={`material-symbols-outlined text-[1.5rem] ${screen === 'addMatch' ? 'filled' : ''}`}>add_circle</span>
             <span className="font-label text-[0.65rem] font-bold uppercase tracking-wider">Add Match</span>
           </button>
+
+          {/* Admin */}
+          {isAdmin && (
+          <button
+            onClick={() => {
+              setPinValue('')
+              setShowPinInput(true)
+            }}
+            className={`flex flex-col items-center justify-center gap-1 transition-all duration-300 cursor-pointer ${
+              screen === 'admin'
+                ? 'text-primary'
+                : 'text-white/40 hover:text-primary'
+            }`}
+          >
+            <span className={`material-symbols-outlined text-[1.5rem] ${screen === 'admin' ? 'filled' : ''}`}>settings</span>
+            <span className="font-label text-[0.65rem] font-bold uppercase tracking-wider">Admin</span>
+          </button>
+          )}
         </div>
       </nav>
     </div>

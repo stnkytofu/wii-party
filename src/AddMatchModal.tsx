@@ -7,14 +7,11 @@ type Props = {
   players: Player[]
   activeGames: ActiveGame[]
   stationConfig: StationConfig
+  currentPlayerId?: string | null
   onSubmit: (result: MatchResult, deltas: Map<string, number>) => void
-  onStartGame: (stationId: StationId, gameId: string, variantId: string | null, playerIds: string[]) => void
+  onStartGame: (stationId: StationId, gameId: string, variantId: string | null, playerIds: string[], placements?: Placement[]) => void
   onGameStarted: () => void
   onClose: () => void
-  initialStationId?: StationId | null
-  initialGameId?: string | null
-  initialVariantId?: string | null
-  initialPlayerIds?: string[] | null
 }
 
 type Step = 'station' | 'game' | 'select' | 'place' | 'results'
@@ -25,16 +22,15 @@ type ResultEntry = {
   delta: number
 }
 
-export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, onStartGame, onGameStarted, onClose, initialStationId, initialGameId, initialVariantId, initialPlayerIds }: Props) {
-  const [step, setStep] = useState<Step>(() => {
-    if (initialGameId && initialPlayerIds) return 'place'
-    if (initialStationId) return 'game'
-    return 'station'
+export function AddMatchModal({ players, activeGames, stationConfig, currentPlayerId, onSubmit, onStartGame, onGameStarted, onClose }: Props) {
+  const [step, setStep] = useState<Step>('station')
+  const [selectedStationId, setSelectedStationId] = useState<StationId | null>(null)
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => {
+    if (currentPlayerId && players.some((p) => p.id === currentPlayerId)) return [currentPlayerId]
+    return []
   })
-  const [selectedStationId, setSelectedStationId] = useState<StationId | null>(initialStationId ?? null)
-  const [selectedGameId, setSelectedGameId] = useState<string | null>(initialGameId ?? null)
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(initialVariantId ?? null)
-  const [selectedIds, setSelectedIds] = useState<string[]>(initialPlayerIds ?? [])
   const [placements, setPlacements] = useState<Placement[]>([])
   const [resultEntries, setResultEntries] = useState<ResultEntry[]>([])
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null)
@@ -54,12 +50,13 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
       // Can't add without a team — use assignTeam instead
     } else {
       setSelectedIds((prev) =>
-        prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < config.maxPlayers ? [...prev, id] : prev
+        prev.includes(id) ? prev.filter((x) => x !== id) : inGamePlayerIds.has(id) ? prev : prev.length < config.maxPlayers ? [...prev, id] : prev
       )
     }
   }
 
   const assignTeam = (playerId: string, team: number) => {
+    if (inGamePlayerIds.has(playerId)) return
     const currentPos = getPositionForPlayer(playerId)
     if (currentPos === team) {
       // Tapping the same team again deselects
@@ -76,22 +73,13 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
     assignPosition(playerId, team)
   }
 
-  // Whether we're submitting results for an already-running game (vs creating a new one)
-  const isSubmittingForActiveGame = !!(initialGameId && initialPlayerIds)
-
   const goToPlace = () => {
     if (selectedIds.length < config.minPlayers) return
-    if (isSubmittingForActiveGame) {
-      // Already in submit-results mode — just move to placement step
-      setPlacements([])
-      setStep('place')
-    } else {
-      // Creating a new game — start it and navigate to lock screen
-      if (selectedStationId && selectedGameId) {
-        onStartGame(selectedStationId, selectedGameId, selectedVariantId, selectedIds)
-      }
-      onGameStarted()
+    // Creating a new game — start it and navigate to lock screen
+    if (selectedStationId && selectedGameId) {
+      onStartGame(selectedStationId, selectedGameId, selectedVariantId, selectedIds)
     }
+    onGameStarted()
   }
 
   const assignPosition = (playerId: string, position: number) => {
@@ -117,6 +105,9 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
   const getPlayerName = (id: string): string =>
     players.find((p) => p.id === id)?.tag ?? '???'
 
+  const inGamePlayerIds = new Set(activeGames.flatMap((g) => g.playerIds))
+  const sortedPlayers = [...players].sort((a, b) => a.tag.localeCompare(b.tag, undefined, { sensitivity: 'base' }))
+
   const canSubmit =
     placements.length === selectedIds.length &&
     (config.teamSize
@@ -125,11 +116,15 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
 
   const handleSubmit = () => {
     if (!canSubmit) return
-    // Mark station as live if not already (team mode skips goToPlace)
-    if (selectedStationId && selectedGameId && step === 'select') {
-      onStartGame(selectedStationId, selectedGameId, selectedVariantId, selectedIds)
+    // Team mode: start the game with placements and go to lock screen
+    if (selectedStationId && selectedGameId && step === 'select' && config.teamSize) {
+      onStartGame(selectedStationId, selectedGameId, selectedVariantId, selectedIds, placements)
+      onGameStarted()
+      return
     }
-    const result: MatchResult = {
+
+    // Compute deltas first so we can store them with the match
+    const tempResult: MatchResult = {
       id: generateId(),
       gameId: selectedGameId!,
       ...(selectedVariantId ? { variantId: selectedVariantId } : {}),
@@ -137,9 +132,13 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
       placements,
       timestamp: Date.now(),
     }
+    const deltas = computeEloDeltas(players, tempResult)
 
-    // Compute deltas for the results screen
-    const deltas = computeEloDeltas(players, result)
+    const result: MatchResult = {
+      ...tempResult,
+      deltas: Object.fromEntries(deltas),
+    }
+
     setEloDeltas(deltas)
     setMatchResult(result)
 
@@ -256,7 +255,7 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
             >
               <span className="material-symbols-outlined text-on-primary-container text-2xl">arrow_forward</span>
               <span className="text-on-primary-container font-black text-lg tracking-tighter uppercase">
-                Next — Select Game
+                Select Game
               </span>
             </button>
           </>
@@ -266,7 +265,10 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
           <>
             <p className="text-on-surface-variant text-sm mb-5">Choose the game for this match</p>
             <div className="grid grid-cols-2 gap-3">
-              {GAMES.map((game) => {
+              {GAMES.filter((game) => {
+                const allowed = stationConfig.gameVisibility?.[selectedStationId!]
+                return !allowed || allowed.length === 0 || allowed.includes(game.id)
+              }).map((game) => {
                 const isSelected = selectedGameId === game.id
                 return (
                   <button
@@ -342,7 +344,7 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
               >
                 <span className="material-symbols-outlined text-on-primary-container text-2xl">arrow_forward</span>
                 <span className="text-on-primary-container font-black text-lg tracking-tighter uppercase">
-                  Next — Select Players
+                  Select Players
                 </span>
               </button>
             </div>
@@ -395,9 +397,10 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
 
             {/* All players with Red / Blue buttons */}
             <div className="space-y-2">
-              {players.map((p) => {
+              {sortedPlayers.map((p) => {
                 const currentPos = getPositionForPlayer(p.id)
                 const teamColor = currentPos === 1 ? 'red' : currentPos === 2 ? 'blue' : null
+                const isInGame = inGamePlayerIds.has(p.id)
                 return (
                   <div
                     key={p.id}
@@ -407,7 +410,7 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
                         : teamColor === 'blue'
                           ? 'bg-blue-500/10 ring-1 ring-blue-500/20'
                           : 'bg-surface-container-low'
-                    }`}
+                    } ${isInGame && !teamColor ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -420,9 +423,9 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
                       <div>
                         <p className="font-bold">{p.tag}</p>
                         <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${
-                          teamColor === 'red' ? 'text-red-400' : teamColor === 'blue' ? 'text-blue-400' : 'text-white/30'
+                          isInGame && !teamColor ? 'text-amber-400' : teamColor === 'red' ? 'text-red-400' : teamColor === 'blue' ? 'text-blue-400' : 'text-white/30'
                         }`}>
-                          {teamColor ? `Team ${teamColor}` : 'Unassigned'}
+                          {isInGame && !teamColor ? 'In Game' : teamColor ? `Team ${teamColor}` : 'Unassigned'}
                         </p>
                       </div>
                     </div>
@@ -457,7 +460,6 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => {
-                  if (initialPlayerIds) { onClose(); return }
                   setStep('game'); setSelectedIds([]); setPlacements([]); setSelectedVariantId(null)
                 }}
                 className="flex-1 py-4 bg-surface-container-high rounded-xl text-on-surface-variant font-bold text-sm uppercase tracking-widest hover:bg-surface-container-highest transition-colors cursor-pointer"
@@ -486,8 +488,9 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
                 : `Tap ${config.minPlayers}–${config.maxPlayers} players to include in this match`}
             </p>
             <div className="space-y-3">
-              {players.map((p) => {
+              {sortedPlayers.map((p) => {
                 const isSelected = selectedIds.includes(p.id)
+                const isInGame = inGamePlayerIds.has(p.id)
                 return (
                   <button
                     key={p.id}
@@ -511,14 +514,16 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
                       <div className="text-left">
                         <p className="font-bold text-lg">{p.tag}</p>
                         <p className={`text-xs font-bold uppercase tracking-widest ${
-                          isSelected ? 'text-primary' : 'text-white/50'
+                          isSelected ? 'text-primary' : isInGame ? 'text-amber-400' : 'text-white/50'
                         }`}>
-                          {isSelected ? 'Selected' : 'Inactive'}
+                          {isSelected ? 'Selected' : isInGame ? 'In Game' : 'Inactive'}
                         </p>
                       </div>
                     </div>
                     {isSelected ? (
                       <span className="material-symbols-outlined text-primary filled">check_circle</span>
+                    ) : isInGame ? (
+                      <span className="material-symbols-outlined text-amber-400 text-xl">sports_esports</span>
                     ) : (
                       <span className="px-6 py-2 rounded-full bg-surface-variant text-xs font-bold uppercase tracking-widest group-hover:bg-primary group-hover:text-on-primary transition-all">
                         Add
@@ -533,7 +538,6 @@ export function AddMatchModal({ players, activeGames, stationConfig, onSubmit, o
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => {
-                  if (initialPlayerIds) { onClose(); return }
                   setStep('game'); setSelectedIds([]); setSelectedVariantId(null)
                 }}
                 className="flex-1 py-4 bg-surface-container-high rounded-xl text-on-surface-variant font-bold text-sm uppercase tracking-widest hover:bg-surface-container-highest transition-colors cursor-pointer"

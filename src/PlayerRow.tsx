@@ -5,8 +5,8 @@ type Props = {
   player: Player
   rank: number
   isTopFour: boolean
-  onRemove: (id: string) => void
-  isAdmin: boolean
+  onRemove?: (id: string) => void
+  isAdmin?: boolean
 }
 
 export function PlayerRow({
@@ -24,7 +24,7 @@ export function PlayerRow({
     </span>
   )
 
-  const deleteButton = isAdmin && (
+  const deleteButton = isAdmin && onRemove && (
     <div className="relative z-10 shrink-0 ml-1">
       <button
         onClick={(e) => { e.stopPropagation(); setShowConfirm(true) }}
@@ -52,7 +52,7 @@ export function PlayerRow({
             Cancel
           </button>
           <button
-            onClick={() => { onRemove(player.id); setShowConfirm(false) }}
+            onClick={() => { onRemove?.(player.id); setShowConfirm(false) }}
             className="flex-1 py-2.5 rounded-lg font-bold text-sm uppercase tracking-widest bg-error text-on-error hover:opacity-90 transition-opacity"
           >
             Remove

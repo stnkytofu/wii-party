@@ -1,30 +1,17 @@
-import type { Player, ActiveGame, StationId, StationConfig } from './types'
+import type { Player, ActiveGame, StationConfig } from './types'
 import { PlayerRow } from './PlayerRow'
-import { AddPlayerForm } from './AddPlayerForm'
 import { NowPlayingSection } from './NowPlayingSection'
 
 type Props = {
   players: Player[]
   activeGames: ActiveGame[]
   stationConfig: StationConfig
-  onAddPlayer: (name: string, tag: string) => void
-  onRemovePlayer: (id: string) => void
-  isAdmin: boolean
-  onClearGame: (stationId: StationId) => void
-  onSubmitResult: (activeGame: ActiveGame) => void
-  onToggleRapidZone: () => void
 }
 
 export function Leaderboard({
   players,
   activeGames,
   stationConfig,
-  onAddPlayer,
-  onRemovePlayer,
-  isAdmin,
-  onClearGame,
-  onSubmitResult,
-  onToggleRapidZone,
 }: Props) {
   const sorted = [...players].sort((a, b) => b.elo - a.elo)
 
@@ -42,19 +29,12 @@ export function Leaderboard({
         activeGames={activeGames}
         stationConfig={stationConfig}
         players={players}
-        isAdmin={isAdmin}
-        onClearGame={onClearGame}
-        onSubmitResult={onSubmitResult}
-        onToggleRapidZone={onToggleRapidZone}
       />
-
-      {/* Add Player Form (Admin only) */}
-      {isAdmin && <AddPlayerForm onAdd={onAddPlayer} />}
 
       {/* Empty State */}
       {sorted.length === 0 && (
         <div className="text-center text-on-surface-variant py-16 text-lg">
-          Add players to get started!
+          No players yet
         </div>
       )}
 
@@ -66,8 +46,6 @@ export function Leaderboard({
             player={player}
             rank={i + 1}
             isTopFour={i < 4}
-            onRemove={onRemovePlayer}
-            isAdmin={isAdmin}
           />
         ))}
       </div>

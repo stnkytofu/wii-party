@@ -70,6 +70,6 @@ export function writeStationConfig(config: StationConfig): void {
 /** Subscribe to real-time station config updates */
 export function onStationConfigChange(callback: (config: StationConfig) => void): () => void {
   return onValue(stationConfigRef, (snapshot) => {
-    callback(snapshot.val() ?? { rapidZoneActive: false })
+    callback(snapshot.val() ?? { rapidZoneActive: false, gameVisibility: {} })
   })
 }

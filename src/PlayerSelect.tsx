@@ -11,7 +11,7 @@ export function PlayerSelect({ players, onSelect }: Props) {
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
         <span className="material-symbols-outlined text-primary text-6xl mb-4">sports_esports</span>
         <h2 className="text-2xl font-bold mb-2">No players yet</h2>
-        <p className="text-on-surface-variant">Ask the admin to add players first!</p>
+        <p className="text-on-surface-variant">Ask the admin to add players first</p>
       </div>
     )
   }
