@@ -83,7 +83,7 @@ export function PlayerRow({
           <div className="flex items-center gap-2 relative z-10 shrink-0">
             <span className="text-lg sm:text-xl font-black text-on-surface-variant w-5 text-center">{rank}</span>
             <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${avatarStyle}`}>
-              <span className="text-lg sm:text-xl">{player.avatar || initials}</span>
+              <span className="text-lg sm:text-xl">{initials}</span>
             </div>
           </div>
 
@@ -117,7 +117,7 @@ export function PlayerRow({
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-lg font-black text-on-surface-variant w-5 text-center">{rank}</span>
             <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-surface-container-highest flex items-center justify-center text-lg">
-              {player.avatar || player.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+              {player.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
             </div>
           </div>
           <div className="flex-1 min-w-0">
@@ -148,7 +148,7 @@ export function PlayerRow({
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-sm font-bold text-on-surface-variant w-5 text-center">{rank}</span>
           <div className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-sm">
-            {player.avatar || player.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+            {player.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
           </div>
         </div>
         <div className="flex-1 min-w-0">

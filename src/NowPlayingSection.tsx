@@ -82,7 +82,7 @@ function ActiveStationCard({
               key={p.id}
               className="flex items-center gap-1.5 px-2 py-1 bg-surface-container rounded-full"
             >
-              <span className="text-sm">{p.avatar || initials}</span>
+              <span className="text-sm">{initials}</span>
               <span className="text-xs font-bold text-on-surface">{p.tag}</span>
             </div>
           )

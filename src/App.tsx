@@ -30,7 +30,6 @@ export default function App() {
   })
   const [showPinInput, setShowPinInput] = useState(false)
   const [pinValue, setPinValue] = useState('')
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [resetInput, setResetInput] = useState('')
   const [managingStationId, setManagingStationId] = useState<StationId | null>(null)
@@ -213,20 +212,6 @@ export default function App() {
     localStorage.removeItem('wii-party-player-id')
   }
 
-  const AVATAR_OPTIONS = [
-    '😎','🤠','🦊','🐱','🐶','🐸','🦁','🐼','🐨','🐯',
-    '🦄','🐲','🎮','🕹️','👾','🤖','👻','💀','🔥','⚡',
-    '🌟','🎯','🏆','🎸','🚀','🧠','💎','🦅','🐺','🦈',
-  ]
-
-  const handleAvatarChange = useCallback((emoji: string) => {
-    if (!currentPlayerId) return
-    updatePlayers((prev) =>
-      prev.map((p) => (p.id === currentPlayerId ? { ...p, avatar: emoji } : p))
-    )
-    setShowAvatarPicker(false)
-  }, [currentPlayerId, updatePlayers])
-
   // Detect external match cancellation (another player cancelled the match)
   useEffect(() => {
     if (managingStationId && screen === 'addMatch') {
@@ -392,15 +377,9 @@ export default function App() {
           const initials = me.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
           return (
             <div className="mb-6 bg-surface-container-high rounded-2xl p-4 flex items-center gap-4">
-              <button
-                onClick={() => setShowAvatarPicker(true)}
-                className="w-14 h-14 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center relative group cursor-pointer"
-              >
-                <span className="text-xl font-black">{me.avatar || initials}</span>
-                <span className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="material-symbols-outlined text-white text-sm">edit</span>
-                </span>
-              </button>
+              <div className="w-14 h-14 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
+                <span className="text-xl font-black">{initials}</span>
+              </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-bold text-on-surface truncate">{me.tag}</h2>
                 <p className="text-on-surface-variant text-sm truncate">{me.name}</p>
@@ -412,26 +391,6 @@ export default function App() {
             </div>
           )
         })()}
-
-        {/* Avatar Picker Modal */}
-        {showAvatarPicker && (
-          <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-6" onClick={() => setShowAvatarPicker(false)}>
-            <div className="bg-surface-container-high rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-bold mb-4 text-center">Pick your avatar</h3>
-              <div className="grid grid-cols-6 gap-2">
-                {AVATAR_OPTIONS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => handleAvatarChange(emoji)}
-                    className="w-11 h-11 rounded-xl bg-surface-container hover:bg-surface-container-highest flex items-center justify-center text-2xl transition-all hover:scale-110 active:scale-95 cursor-pointer"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {screen === 'leaderboard' && (
           <Leaderboard

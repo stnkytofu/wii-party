@@ -1,7 +1,23 @@
 import { useState, useEffect } from 'react'
 import type { Player, MatchResult, Placement, StationId, ActiveGame, StationConfig } from './types'
-import { GAMES, STATIONS, getGameConfig } from './types'
+import { GAMES, STATIONS, getGameConfig, getTeamColor } from './types'
 import { generateId, computeEloDeltas } from './utils'
+
+import mariokartImg from './images/mariokart.webp'
+import wiisportsresortImg from './images/wiisportsresort.avif'
+import singitImg from './images/singit.png'
+import wiisportsImg from './images/wiisports.png'
+import supersmashImg from './images/supersmash.jpg'
+import marioandsonicImg from './images/marioandsonic.jpeg'
+
+const GAME_IMAGES: Record<string, string> = {
+  'mario-kart': mariokartImg,
+  'wii-sports-resort': wiisportsresortImg,
+  'sing-it-disney': singitImg,
+  'wii-sports': wiisportsImg,
+  'super-smash-bros': supersmashImg,
+  'mario-sonic-olympics': marioandsonicImg,
+}
 
 type Props = {
   players: Player[]
@@ -270,22 +286,41 @@ export function AddMatchModal({ players, activeGames, stationConfig, currentPlay
                 return !allowed || allowed.length === 0 || allowed.includes(game.id)
               }).map((game) => {
                 const isSelected = selectedGameId === game.id
+                const gameImage = GAME_IMAGES[game.id]
                 return (
                   <button
                     key={game.id}
                     onClick={() => { setSelectedGameId(game.id); setSelectedVariantId(null); setSelectedIds([]) }}
-                    className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 transition-all duration-300 cursor-pointer ${
+                    className={`relative aspect-square rounded-2xl flex flex-col items-end justify-end overflow-hidden transition-all duration-300 cursor-pointer ${
                       isSelected
-                        ? 'bg-surface-container-high ring-2 ring-primary shadow-[0_0_24px_rgba(145,247,142,0.15)]'
-                        : 'bg-surface-container-low hover:bg-surface-container-high'
+                        ? 'ring-[3px] ring-primary shadow-[0_0_24px_rgba(145,247,142,0.25)]'
+                        : 'ring-1 ring-white/10 hover:ring-white/20'
                     }`}
                   >
-                    {isSelected && (
-                      <span className="absolute top-3 left-3 material-symbols-outlined text-primary filled text-xl">check_circle</span>
+                    {/* Background image or emoji fallback */}
+                    {gameImage ? (
+                      <img
+                        src={gameImage}
+                        alt={game.name}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-surface-container-low flex items-center justify-center">
+                        <span className="text-5xl">{game.emoji}</span>
+                      </div>
                     )}
-                    <span className="text-5xl">{game.emoji}</span>
-                    <span className={`text-sm font-bold ${
-                      isSelected ? 'text-primary' : 'text-on-surface-variant'
+
+                    {/* Gradient overlay for text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Selected check icon */}
+                    {isSelected && (
+                      <span className="absolute top-3 left-3 material-symbols-outlined text-primary filled text-2xl drop-shadow-lg z-10">check_circle</span>
+                    )}
+
+                    {/* Game name */}
+                    <span className={`relative z-10 w-full text-left px-4 pb-4 text-lg font-black leading-tight drop-shadow-lg ${
+                      isSelected ? 'text-primary' : 'text-white'
                     }`}>
                       {game.name}
                     </span>
@@ -354,26 +389,22 @@ export function AddMatchModal({ players, activeGames, stationConfig, currentPlay
         {step === 'select' && config.teamSize ? (
           /* ── Team Select + Assign (combined step) ── */
           <>
-            <p className="text-on-surface-variant text-sm mb-5">Assign players to Team Red or Team Blue</p>
+            <p className="text-on-surface-variant text-sm mb-5">Assign players to teams</p>
 
             {/* Team summary cards */}
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              {[1, 2].map((teamNum) => {
-                const teamColor = teamNum === 1 ? 'red' : 'blue'
+            <div className={`grid gap-3 mb-5 ${(numTeams ?? 2) <= 2 ? 'grid-cols-2' : (numTeams ?? 2) <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-4'}`}>
+              {Array.from({ length: numTeams ?? 2 }, (_, i) => i + 1).map((teamNum) => {
+                const tc = getTeamColor(teamNum)
                 const teamMembers = selectedIds.filter((id) => getPositionForPlayer(id) === teamNum)
                 return (
                   <div
                     key={teamNum}
-                    className={`rounded-2xl p-4 transition-all duration-300 ${
-                      teamNum === 1
-                        ? 'bg-red-500/10 ring-1 ring-red-500/30'
-                        : 'bg-blue-500/10 ring-1 ring-blue-500/30'
-                    }`}
+                    className={`rounded-2xl p-4 transition-all duration-300 ${tc.bgFaint} ring-1 ${tc.ringFaint}`}
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <span className={`w-3 h-3 rounded-full ${teamNum === 1 ? 'bg-red-500' : 'bg-blue-500'}`} />
-                      <span className={`text-xs font-black uppercase tracking-widest ${teamNum === 1 ? 'text-red-400' : 'text-blue-400'}`}>
-                        Team {teamColor}
+                      <span className={`w-3 h-3 rounded-full ${tc.bg}`} />
+                      <span className={`text-xs font-black uppercase tracking-widest ${tc.text}`}>
+                        Team {tc.name}
                       </span>
                       <span className="text-white/30 text-xs ml-auto">{teamMembers.length}/{config.teamSize}</span>
                     </div>
@@ -383,8 +414,8 @@ export function AddMatchModal({ players, activeGames, stationConfig, currentPlay
                       )}
                       {teamMembers.map((id) => (
                         <div key={id} className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${teamNum === 1 ? 'bg-red-500/20' : 'bg-blue-500/20'}`}>
-                            <span className={`material-symbols-outlined text-sm ${teamNum === 1 ? 'text-red-400' : 'text-blue-400'} filled`}>face</span>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tc.bgMed}`}>
+                            <span className={`material-symbols-outlined text-sm ${tc.text} filled`}>face</span>
                           </div>
                           <span className="text-sm font-bold text-on-surface">{getPlayerName(id)}</span>
                         </div>
@@ -399,57 +430,49 @@ export function AddMatchModal({ players, activeGames, stationConfig, currentPlay
             <div className="space-y-2">
               {sortedPlayers.map((p) => {
                 const currentPos = getPositionForPlayer(p.id)
-                const teamColor = currentPos === 1 ? 'red' : currentPos === 2 ? 'blue' : null
+                const tc = currentPos ? getTeamColor(currentPos) : null
                 const isInGame = inGamePlayerIds.has(p.id)
                 return (
                   <div
                     key={p.id}
                     className={`p-3 rounded-xl flex items-center justify-between transition-all duration-300 ${
-                      teamColor === 'red'
-                        ? 'bg-red-500/10 ring-1 ring-red-500/20'
-                        : teamColor === 'blue'
-                          ? 'bg-blue-500/10 ring-1 ring-blue-500/20'
-                          : 'bg-surface-container-low'
-                    } ${isInGame && !teamColor ? 'opacity-50' : ''}`}
+                      tc ? `${tc.bgFaint} ring-1 ${tc.ringFaint}` : 'bg-surface-container-low'
+                    } ${isInGame && !tc ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        teamColor === 'red' ? 'bg-red-500/20 ring-2 ring-red-500' : teamColor === 'blue' ? 'bg-blue-500/20 ring-2 ring-blue-500' : 'bg-white/5'
+                        tc ? `${tc.bgMed} ring-2 ${tc.ring}` : 'bg-white/5'
                       }`}>
                         <span className={`material-symbols-outlined ${
-                          teamColor === 'red' ? 'text-red-400' : teamColor === 'blue' ? 'text-blue-400' : 'text-white/40'
+                          tc ? tc.text : 'text-white/40'
                         } filled`}>face</span>
                       </div>
                       <div>
                         <p className="font-bold">{p.tag}</p>
                         <p className={`text-[0.65rem] font-bold uppercase tracking-widest ${
-                          isInGame && !teamColor ? 'text-amber-400' : teamColor === 'red' ? 'text-red-400' : teamColor === 'blue' ? 'text-blue-400' : 'text-white/30'
+                          isInGame && !tc ? 'text-amber-400' : tc ? tc.text : 'text-white/30'
                         }`}>
-                          {isInGame && !teamColor ? 'In Game' : teamColor ? `Team ${teamColor}` : 'Unassigned'}
+                          {isInGame && !tc ? 'In Game' : tc ? `Team ${tc.name}` : 'Unassigned'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => assignTeam(p.id, 1)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                          currentPos === 1
-                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                            : 'bg-red-500/15 text-red-400 hover:bg-red-500/30'
-                        }`}
-                      >
-                        Red
-                      </button>
-                      <button
-                        onClick={() => assignTeam(p.id, 2)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                          currentPos === 2
-                            ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                            : 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/30'
-                        }`}
-                      >
-                        Blue
-                      </button>
+                    <div className="flex gap-1 flex-wrap justify-end">
+                      {Array.from({ length: numTeams ?? 2 }, (_, i) => i + 1).map((teamNum) => {
+                        const btc = getTeamColor(teamNum)
+                        return (
+                          <button
+                            key={teamNum}
+                            onClick={() => assignTeam(p.id, teamNum)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                              currentPos === teamNum
+                                ? `${btc.bg} text-white shadow-lg ${btc.shadow}`
+                                : `${btc.bgFaint} ${btc.text} hover:${btc.bgMed}`
+                            }`}
+                          >
+                            {btc.name}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 )
@@ -552,7 +575,7 @@ export function AddMatchModal({ players, activeGames, stationConfig, currentPlay
               >
                 <span className="material-symbols-outlined text-on-primary-container text-2xl">arrow_forward</span>
                 <span className="text-on-primary-container font-black text-lg tracking-tighter uppercase">
-                  Next — Assign Places ({selectedIds.length})
+                  Start Game <br />({selectedIds.length} Players)
                 </span>
               </button>
             </div>
@@ -645,7 +668,7 @@ export function AddMatchModal({ players, activeGames, stationConfig, currentPlay
                       const initials = winner.player.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
                       return (
                         <div key={winner.player.id} className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-secondary to-secondary-container shadow-[0_0_40px_rgba(145,247,142,0.3)] mb-3">
-                          <span className="text-3xl">{winner.player.avatar || initials}</span>
+                          <span className="text-3xl">{initials}</span>
                         </div>
                       )
                     })}
@@ -698,7 +721,7 @@ export function AddMatchModal({ players, activeGames, stationConfig, currentPlay
                         ? 'bg-secondary/20 ring-2 ring-secondary'
                         : 'bg-surface-container-highest'
                     }`}>
-                      <span className="text-lg">{entry.player.avatar || initials}</span>
+                      <span className="text-lg">{initials}</span>
                     </div>
 
                     {/* Name */}

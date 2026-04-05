@@ -30,10 +30,7 @@ export function PlayerSelect({ players, onSelect }: Props) {
             className="w-full bg-surface-container-high hover:bg-surface-container-highest p-4 rounded-xl flex items-center gap-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
             <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-              {player.avatar
-                ? <span className="text-2xl">{player.avatar}</span>
-                : <span className="material-symbols-outlined text-primary">face</span>
-              }
+              <span className="material-symbols-outlined text-primary">face</span>
             </div>
             <div className="text-left flex-1">
               <p className="font-bold text-lg">{player.tag}</p>

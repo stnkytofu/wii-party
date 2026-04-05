@@ -12,7 +12,6 @@ export function createPlayer(name: string, tag: string): Player {
     name: name.trim(),
     tag: tag.trim(),
     elo: 1000,
-    avatar: '',
     streak: 0,
   }
 }
@@ -51,7 +50,9 @@ export function computeEloDeltas(
     playerMap.set(p.id, p)
   }
 
-  const numPlayers = matchResult.playerIds.length
+  // Use distinct positions (handles teams: 2 teams → 2 positions, not N players)
+  const distinctPositions = new Set(matchResult.placements.map((p) => p.position)).size
+  const numSlots = Math.max(distinctPositions, 2)
   const eloChanges = new Map<string, number>()
 
   for (const playerId of matchResult.playerIds) {
@@ -61,11 +62,11 @@ export function computeEloDeltas(
     if (pos === undefined) continue
 
     // Linear scale: 1st → FIRST_PLACE_DELTA, last → LAST_PLACE_DELTA
-    const placementRatio = numPlayers > 1 ? (numPlayers - pos) / (numPlayers - 1) : 1
+    const placementRatio = numSlots > 1 ? (numSlots - pos) / (numSlots - 1) : 1
     let delta = LAST_PLACE_DELTA + (FIRST_PLACE_DELTA - LAST_PLACE_DELTA) * placementRatio
 
-    // K-factor nudge: compare against average opponent ELO
-    const opponents = matchResult.playerIds.filter((id) => id !== playerId)
+    // K-factor nudge: compare against opponents (different position = opponent)
+    const opponents = matchResult.playerIds.filter((id) => id !== playerId && positionMap.get(id) !== pos)
     const avgOpponentElo = opponents.reduce((sum, id) => sum + (playerMap.get(id)?.elo ?? 1000), 0) / (opponents.length || 1)
     const actual = placementRatio // 1.0 for 1st, 0.0 for last
     const expected = expectedScore(player.elo, avgOpponentElo)

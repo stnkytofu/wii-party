@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Player, ActiveGame, MatchResult, Placement } from './types'
-import { STATIONS, GAMES, getGameConfig } from './types'
+import { STATIONS, GAMES, getGameConfig, getTeamColor } from './types'
 import { generateId, computeEloDeltas } from './utils'
 
 type Props = {
@@ -57,6 +57,7 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
   const variant = game?.variants?.find((v) => v.id === activeGame.variantId)
   const config = game ? getGameConfig(game.id, activeGame.variantId) : { minPlayers: 2, maxPlayers: 4, teamSize: undefined }
   const isTeamMode = !!config.teamSize
+  const numTeams = config.teamSize ? Math.floor(config.maxPlayers / config.teamSize) : undefined
   const gamePlayers = activeGame.playerIds
     .map((id) => players.find((p) => p.id === id))
     .filter(Boolean) as Player[]
@@ -82,9 +83,13 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
 
     let finalPlacements: Placement[]
     if (isTeamMode && activeGame.placements) {
+      // Winning team → position 1, all other teams get positions 2, 3, …
+      const otherTeams = [...new Set(activeGame.placements.map((p) => p.position))]
+        .filter((t) => t !== winningTeam)
+        .sort((a, b) => a - b)
       finalPlacements = activeGame.placements.map((p) => ({
         playerId: p.playerId,
-        position: p.position === winningTeam ? 1 : 2,
+        position: p.position === winningTeam ? 1 : otherTeams.indexOf(p.position) + 2,
       }))
     } else {
       finalPlacements = placements
@@ -170,7 +175,7 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
               return (
                 <div key={p.id} className="flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-full">
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-sm">{p.avatar || initials}</span>
+                    <span className="text-sm">{initials}</span>
                   </div>
                   <span className="text-sm font-bold text-on-surface">{p.tag}</span>
                 </div>
@@ -295,9 +300,9 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
           <h2 className="text-[1.75rem] font-bold font-headline tracking-tight mb-2">Who Won?</h2>
           <p className="text-on-surface-variant text-sm mb-6">Select the winning team</p>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {[1, 2].map((teamNum) => {
-              const teamColor = teamNum === 1 ? 'red' : 'blue'
+          <div className={`grid gap-4 mb-6 ${(numTeams ?? 2) <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            {Array.from({ length: numTeams ?? 2 }, (_, i) => i + 1).map((teamNum) => {
+              const tc = getTeamColor(teamNum)
               const teamMembers = activeGame.placements!
                 .filter((p) => p.position === teamNum)
                 .map((p) => players.find((pl) => pl.id === p.playerId))
@@ -309,21 +314,17 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
                   onClick={() => setWinningTeam(teamNum)}
                   className={`rounded-2xl p-5 transition-all duration-300 cursor-pointer ${
                     isSelected
-                      ? teamNum === 1
-                        ? 'bg-red-500/20 ring-2 ring-red-500 shadow-[0_0_24px_rgba(239,68,68,0.2)]'
-                        : 'bg-blue-500/20 ring-2 ring-blue-500 shadow-[0_0_24px_rgba(59,130,246,0.2)]'
-                      : teamNum === 1
-                        ? 'bg-red-500/10 ring-1 ring-red-500/30 hover:bg-red-500/15'
-                        : 'bg-blue-500/10 ring-1 ring-blue-500/30 hover:bg-blue-500/15'
+                      ? `${tc.bgMed} ring-2 ${tc.ring}`
+                      : `${tc.bgFaint} ring-1 ${tc.ringFaint}`
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <span className={`w-3 h-3 rounded-full ${teamNum === 1 ? 'bg-red-500' : 'bg-blue-500'}`} />
-                    <span className={`text-xs font-black uppercase tracking-widest ${teamNum === 1 ? 'text-red-400' : 'text-blue-400'}`}>
-                      Team {teamColor}
+                    <span className={`w-3 h-3 rounded-full ${tc.bg}`} />
+                    <span className={`text-xs font-black uppercase tracking-widest ${tc.text}`}>
+                      Team {tc.name}
                     </span>
                     {isSelected && (
-                      <span className={`material-symbols-outlined text-sm ml-auto filled ${teamNum === 1 ? 'text-red-400' : 'text-blue-400'}`}>
+                      <span className={`material-symbols-outlined text-sm ml-auto filled ${tc.text}`}>
                         emoji_events
                       </span>
                     )}
@@ -331,8 +332,8 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
                   <div className="space-y-2">
                     {teamMembers.map((p) => (
                       <div key={p.id} className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${teamNum === 1 ? 'bg-red-500/20' : 'bg-blue-500/20'}`}>
-                          <span className={`material-symbols-outlined text-sm ${teamNum === 1 ? 'text-red-400' : 'text-blue-400'} filled`}>face</span>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tc.bgMed}`}>
+                          <span className={`material-symbols-outlined text-sm ${tc.text} filled`}>face</span>
                         </div>
                         <span className="text-sm font-bold text-on-surface">{p.tag}</span>
                       </div>
@@ -380,7 +381,7 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
                     const initials = winner.player.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
                     return (
                       <div key={winner.player.id} className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-secondary to-secondary-container shadow-[0_0_40px_rgba(145,247,142,0.3)] mb-3">
-                        <span className="text-3xl">{winner.player.avatar || initials}</span>
+                        <span className="text-3xl">{initials}</span>
                       </div>
                     )
                   })}
@@ -430,7 +431,7 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
                       ? 'bg-secondary/20 ring-2 ring-secondary'
                       : 'bg-surface-container-highest'
                   }`}>
-                    <span className="text-lg">{entry.player.avatar || initials}</span>
+                    <span className="text-lg">{initials}</span>
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -452,15 +453,32 @@ export function MatchLockScreen({ activeGame, players, onCancel, onSubmit, onClo
           </div>
 
           {revealedCount >= resultEntries.length && (
-            <button
-              onClick={handleConfirm}
-              className="w-full mt-8 py-5 bg-gradient-to-br from-primary to-primary-container rounded-xl flex items-center justify-center gap-2 shadow-[0_20px_40px_rgba(145,247,142,0.15)] transition-all duration-500 hover:scale-[0.98] active:scale-95 animate-slide-up"
-            >
-              <span className="material-symbols-outlined text-on-primary-container text-2xl">check_circle</span>
-              <span className="text-on-primary-container font-black text-lg tracking-tighter uppercase">
-                Confirm & Save
-              </span>
-            </button>
+            <div className="flex gap-3 mt-8 animate-slide-up">
+              <button
+                onClick={() => {
+                  setPlacements([])
+                  setWinningTeam(null)
+                  setResultEntries([])
+                  setMatchResult(null)
+                  setEloDeltas(new Map())
+                  setRevealedCount(0)
+                  setStep('place')
+                }}
+                className="flex-1 py-5 bg-surface-container-high rounded-xl text-on-surface-variant font-bold text-sm uppercase tracking-widest hover:bg-surface-container-highest transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm align-middle mr-1">arrow_back</span>
+                Redo
+              </button>
+              <button
+                onClick={handleConfirm}
+                className="flex-[2] py-5 bg-gradient-to-br from-primary to-primary-container rounded-xl flex items-center justify-center gap-2 shadow-[0_20px_40px_rgba(145,247,142,0.15)] transition-all duration-500 hover:scale-[0.98] active:scale-95"
+              >
+                <span className="material-symbols-outlined text-on-primary-container text-2xl">check_circle</span>
+                <span className="text-on-primary-container font-black text-lg tracking-tighter uppercase">
+                  Confirm
+                </span>
+              </button>
+            </div>
           )}
         </div>
       )}
